@@ -1,39 +1,38 @@
 # **Composable Property Panel - Proof of Concept (POC)**
 
 ## **🚀 Overview**
+This project demonstrates a **composable, schema-driven property panel** that dynamically renders settings for both **global dashboard configurations** and **individual widget configurations**. The system allows **extensible, reusable UI controls** with built-in **conditional rules** that dynamically adjust visibility and behavior.
 
-This **Proof of Concept (POC)** demonstrates a **composable property panel** that dynamically updates widget configurations in a **dashboard-like environment**. The goal is to provide a **scalable, reusable** property panel system that synchronizes settings across widgets based on defined conditions.
+This POC is ideal for applications requiring **highly configurable dashboards**, **no-code platforms**, or **dynamic UI forms**.
 
 ---
 
-## **🔹 Key Features**
-
-✅ **Composable Property Panel** - Dynamically generates UI controls based on a configuration schema.\
-✅ **Widget-Level & Global Settings** - Widgets have independent settings, while global settings can override them.\
-✅ **Conditional Synchronization** - Enforces rules (e.g., syncing currency across widgets).\
-✅ **Ant Design UI Components** - Provides a clean, modern interface.\
-✅ **Zustand for State Management** - Ensures efficient and reactive state updates.\
-✅ **Pluggable Widgets (********`Widget*`******** Components)** - Easily extendable with new widgets.
+## **🔹 Features**
+✅ **Composable & Schema-Driven** - UI dynamically adapts to the provided definition.  
+✅ **Global & Widget-Level Settings** - Supports settings at both levels, with automatic overrides.  
+✅ **Conditional Rules System** - Properties can depend on other values, enabling sync behaviors.  
+✅ **UI Control Rendering** - Supports multiple control types (`dropdown`, `switch`, `input`, `number`).  
+✅ **Ant Design UI Components** - Provides a polished, modern UI.  
+✅ **Zustand for State Management** - Lightweight and efficient state management.
 
 ---
 
 ## **📂 Project Structure**
-
 ```
 src/
 │── components/
-│   │── PropertyPanel.tsx         # Composable property panel
-│   │── DashboardRenderer.tsx     # Renders widgets in the dashboard
+│   │── PropertyPanel.tsx          # Composable property panel (schema-driven UI)
+│   │── DashboardRenderer.tsx      # Renders widgets dynamically
 │   │── widgets/
-│   │   │── WidgetChart.tsx       # Chart widget with currency support
-│   │   │── WidgetTable.tsx       # Table widget with dynamic row count & currency
+│   │   │── WidgetChart.tsx        # Chart widget (uses schema-defined props)
+│   │   │── WidgetTable.tsx        # Table widget (dynamically updates rows & currency)
 │── data/
-│   │── dashboardTemplate.ts      # Defines widgets, settings, and conditional rules
+│   │── dashboardTemplate.ts       # Defines widgets, settings, and conditional rules
 │── store/
-│   │── dashboardStore.ts         # Zustand store for managing settings
-│── types.ts                      # TypeScript interfaces for schema-driven rendering
+│   │── dashboardStore.ts          # Zustand store for managing configurations
+│── types.ts                       # TypeScript interfaces for schema-driven rendering
 │── App.tsx                        # Main app container
-│── main.tsx                       # React entry point
+│── main.tsx                        # React entry point
 │── README.md                      # Documentation
 ```
 
@@ -42,26 +41,41 @@ src/
 ## **⚙️ How It Works**
 
 ### **📌 Composable Property Panel**
-
-The **`PropertyPanel.tsx`** dynamically renders input fields for:
-
+The **`PropertyPanel.tsx`** dynamically generates UI controls based on a schema.  
+It supports:
 - **Global Settings (Dashboard Level)**
 - **Per-Widget Settings (Independent or Synced)**
 
 ```tsx
-<PropertyPanel dashboard={dashboardTemplate} />   // For global settings
-<PropertyPanel widget={widget} dashboard={dashboardTemplate} />   // For per-widget settings
+<PropertyPanel dashboard={dashboardTemplate} />   // Renders global properties
+<PropertyPanel widget={widget} dashboard={dashboardTemplate} />   // Renders per-widget settings
 ```
 
 ---
 
-### **📌 Conditional Rules (Sync Currency Feature)**
+### **📌 Schema-Driven UI Rendering**
+Instead of hardcoding UI elements, the system **interprets definitions dynamically**.
 
-This system allows defining **dynamic dependencies** between settings.\
-Example: If **`syncCurrency`** is enabled, all widgets follow **`globalCurrency`** instead of their own setting.
+Example of a **widget property definition in `dashboardTemplate.ts`**:
+```tsx
+{
+  key: "currency",
+  label: "Currency",
+  type: "string",
+  uiControl: "dropdown",
+  defaultValue: "USD",
+  options: ["USD", "EUR", "JPY", "GBP"],
+}
+```
+The **Property Panel** automatically renders this as a **`Select` dropdown**, without manual UI configuration.
 
-#### \*\*Conditional Rule Definition in \*\***`dashboardTemplate.ts`**
+---
 
+### **📌 Conditional Rules for Dynamic UI**
+Settings can be **conditionally displayed or updated** based on other values.  
+For example, if **`syncCurrency` is enabled**, all widgets will follow the **`globalCurrency`** setting.
+
+#### **Example: Conditional Rule for Currency Syncing**
 ```tsx
 conditionalRules: [
   {
@@ -84,83 +98,74 @@ conditionalRules: [
       value: true,
     },
   },
-]
+],
 ```
 
-#### \*\*Behavior in \*\***`PropertyPanel.tsx`**
+#### **Behavior in the UI**
+- **If `syncCurrency = true`** → Widgets **follow `globalCurrency`**.
+- **If `syncCurrency = false`** → Widgets **can have independent currencies**.
 
-```tsx
-{isSyncEnabled && option.key === "currency" ? null : (
-  <Form.Item key={option.key} label={option.label}>
-    <Select
-      value={userDashboard.configValues[widget.id]?.[option.key] || option.defaultValue}
-      onChange={(value) => handleChange(option.key, value)}
-    >
-      {option.options?.map((opt) => (
-        <Option key={opt} value={opt}>
-          {opt}
-        </Option>
-      ))}
-    </Select>
-  </Form.Item>
-)}
-```
+---
 
-📌 **Outcome:**
+### **📌 Supported UI Controls**
+| Control Type | `uiControl` Value | Example UI |
+|-------------|-----------------|------------|
+| Switch (Toggle) | `"switch"` | `✓ Enable Sync` |
+| Dropdown | `"dropdown"` | `USD / EUR / JPY` |
+| Number Input | `"number"` | `Rows Per Page: 10` |
+| Text Input | `"input"` | `Report Name: "Monthly Sales"` |
 
-- \*\*If \*\***`syncCurrency = true`** → Widgets follow `globalCurrency`.
-- \*\*If \*\***`syncCurrency = false`** → Each widget can choose its own currency.
+These controls are **automatically rendered** based on the schema, without modifying the UI code.
 
 ---
 
 ## **💡 Use Cases**
-
-✅ **Configurable Dashboards** - Allowing users to modify settings dynamically.\
-✅ **No-Code Platforms** - Enabling users to configure components via UI.\
-✅ **Composable UI Systems** - Extending the property panel for different applications.
+✅ **Configurable Dashboards** - Dynamically generate UI based on user-defined templates.  
+✅ **No-Code Platforms** - Enable users to modify UI configurations without writing code.  
+✅ **Dynamic UI Systems** - Automatically adapt UI components based on settings.
 
 ---
 
 ## **🛠️ Setup & Run**
-
 1️⃣ Install dependencies:
-
 ```bash
 npm install
 ```
-
 2️⃣ Start the development server:
-
 ```bash
 npm run dev
 ```
-
 3️⃣ Open [http://localhost:5173](http://localhost:5173) to see the demo.
 
 ---
 
-## **🤝 Contributing**
+## **🚀 Future Enhancements**
+🔹 **Drag & Drop Widgets** - Allow users to reposition widgets dynamically.  
+🔹 **Local Storage Persistence** - Save user settings across sessions.  
+🔹 **More Widget Types** - Support charts, tables, KPIs, etc.  
+🔹 **Dark Mode / Theming** - Customizable styles.
 
-This is a **POC** and open to improvements! If you’d like to contribute:\
-1️⃣ Fork the repo\
-2️⃣ Create a feature branch\
+---
+
+## **🤝 Contributing**
+This project is open for contributions! 🚀  
+1️⃣ Fork the repo  
+2️⃣ Create a feature branch  
 3️⃣ Submit a PR 🎉
 
 ---
 
 ## **📜 License**
-
 MIT License. Free to use and modify.
 
 ---
 
 ## **🔗 Links**
-
-📖 **Ant Design Components** → [https://ant.design/components/](https://ant.design/components/)\
-🔧 **Zustand State Management** → [https://github.com/pmndrs/zustand](https://github.com/pmndrs/zustand)\
+📖 **Ant Design Components** → [https://ant.design/components/](https://ant.design/components/)  
+🔧 **Zustand State Management** → [https://github.com/pmndrs/zustand](https://github.com/pmndrs/zustand)  
 📊 **Recharts for Charts** → [https://recharts.org/en-US/](https://recharts.org/en-US/)
 
 ---
 
-**🚀 Built for flexibility, composability, and scalability!**\
-Let me know if you’d like additional improvements! 😃
+**🚀 Designed for scalability, reusability, and dynamic UI generation!**  
+Let me know if you need further refinements. 😃
