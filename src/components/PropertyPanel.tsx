@@ -1,6 +1,15 @@
 import React from 'react'
-import { Form, Select, Switch, Card, Divider } from 'antd'
-import { WidgetDefinition, DashboardTemplate } from '../types'
+import {
+  Form,
+  Select,
+  Switch,
+  Card,
+  Divider,
+  InputNumber,
+  Input,
+  Slider,
+} from 'antd'
+import { WidgetDefinition, DashboardTemplate, ConfigOption } from '../types'
 import { useDashboardStore } from '../store/dashboardStore'
 
 const { Option } = Select
@@ -16,9 +25,8 @@ const PropertyPanel: React.FC<Props> = ({ widget, dashboard }) => {
     updateWidgetConfig,
     updateDashboardConfig,
   } = useDashboardStore()
-  const isSyncEnabled = userDashboard.dashboardProperties.syncCurrency
-  const globalCurrency = userDashboard.dashboardProperties.globalCurrency
 
+  /** Handles state updates for both widget & global settings */
   const handleChange = (
     key: string,
     value: any,
@@ -28,6 +36,33 @@ const PropertyPanel: React.FC<Props> = ({ widget, dashboard }) => {
       updateDashboardConfig(key, value)
     } else if (widget) {
       updateWidgetConfig(widget.id, key, value)
+    }
+  }
+
+  /** Determines if a config should be rendered based on conditional rules */
+  const shouldShowConfig = (option: ConfigOption): boolean => {
+    const rule = dashboard?.conditionalRules.find(
+      (r) => r.targetWidget === widget?.id && r.configKey === option.key
+    )
+    if (!rule) return true // No rule means always show
+
+    const { widget: sourceWidget, key, operator, value } = rule.dependsOn
+    const sourceValue =
+      sourceWidget === 'global'
+        ? userDashboard.dashboardProperties[key]
+        : userDashboard.configValues[sourceWidget]?.[key]
+
+    switch (operator) {
+      case 'equals':
+        return sourceValue === value
+      case 'notEquals':
+        return sourceValue !== value
+      case 'greaterThan':
+        return sourceValue > value
+      case 'lessThan':
+        return sourceValue < value
+      default:
+        return true
     }
   }
 
@@ -41,32 +76,52 @@ const PropertyPanel: React.FC<Props> = ({ widget, dashboard }) => {
         {/* Global Dashboard Settings */}
         {dashboard && (
           <>
-            <Form.Item label="Sync Currency Across Widgets">
-              <Switch
-                checked={isSyncEnabled}
-                onChange={(checked) =>
-                  handleChange('syncCurrency', checked, true)
-                }
-              />
-            </Form.Item>
-
-            {isSyncEnabled && (
-              <Form.Item label="Global Currency">
-                <Select
-                  value={globalCurrency}
-                  onChange={(value) =>
-                    handleChange('globalCurrency', value, true)
-                  }
-                >
-                  {dashboard.properties
-                    .find((p) => p.key === 'globalCurrency')
-                    ?.options?.map((opt) => (
-                      <Option key={opt} value={opt}>
-                        {opt}
-                      </Option>
-                    ))}
-                </Select>
-              </Form.Item>
+            {dashboard.properties.map((option) =>
+              shouldShowConfig(option) ? (
+                <Form.Item key={option.key} label={option.label}>
+                  {option.uiControl === 'switch' && (
+                    <Switch
+                      checked={userDashboard.dashboardProperties[option.key]}
+                      onChange={(checked) =>
+                        handleChange(option.key, checked, true)
+                      }
+                    />
+                  )}
+                  {option.uiControl === 'dropdown' && (
+                    <Select
+                      value={userDashboard.dashboardProperties[option.key]}
+                      onChange={(value) =>
+                        handleChange(option.key, value, true)
+                      }
+                    >
+                      {option.options?.map((opt) => (
+                        <Option key={opt} value={opt}>
+                          {opt}
+                        </Option>
+                      ))}
+                    </Select>
+                  )}
+                  {option.uiControl === 'slider' && (
+                    <InputNumber
+                      min={option.min || 0}
+                      max={option.max || 100}
+                      step={option.step || 1}
+                      value={userDashboard.dashboardProperties[option.key]}
+                      onChange={(value) =>
+                        handleChange(option.key, value, true)
+                      }
+                    />
+                  )}
+                  {option.uiControl === 'input' && (
+                    <Input
+                      value={userDashboard.dashboardProperties[option.key]}
+                      onChange={(e) =>
+                        handleChange(option.key, e.target.value, true)
+                      }
+                    />
+                  )}
+                </Form.Item>
+              ) : null
             )}
             <Divider />
           </>
@@ -74,15 +129,22 @@ const PropertyPanel: React.FC<Props> = ({ widget, dashboard }) => {
 
         {/* Widget-Specific Settings */}
         {widget &&
-          widget.configOptions.map((option) => {
-            if (isSyncEnabled && option.key === 'currency') return null // Hide widget currency if sync is on
-
-            return (
+          widget.configOptions.map((option) =>
+            shouldShowConfig(option) ? (
               <Form.Item key={option.key} label={option.label}>
+                {option.uiControl === 'switch' && (
+                  <Switch
+                    checked={
+                      userDashboard.configValues[widget.id]?.[option.key] ??
+                      option.defaultValue
+                    }
+                    onChange={(checked) => handleChange(option.key, checked)}
+                  />
+                )}
                 {option.uiControl === 'dropdown' && (
                   <Select
                     value={
-                      userDashboard.configValues[widget.id]?.[option.key] ||
+                      userDashboard.configValues[widget.id]?.[option.key] ??
                       option.defaultValue
                     }
                     onChange={(value) => handleChange(option.key, value)}
@@ -94,9 +156,30 @@ const PropertyPanel: React.FC<Props> = ({ widget, dashboard }) => {
                     ))}
                   </Select>
                 )}
+                {option.uiControl === 'slider' && (
+                  <Slider
+                    min={option.min || 0}
+                    max={option.max || 100}
+                    step={option.step || 1}
+                    value={
+                      userDashboard.configValues[widget.id]?.[option.key] ??
+                      option.defaultValue
+                    }
+                    onChange={(value) => handleChange(option.key, value)}
+                  />
+                )}
+                {option.uiControl === 'input' && (
+                  <Input
+                    value={
+                      userDashboard.configValues[widget.id]?.[option.key] ??
+                      option.defaultValue
+                    }
+                    onChange={(e) => handleChange(option.key, e.target.value)}
+                  />
+                )}
               </Form.Item>
-            )
-          })}
+            ) : null
+          )}
       </Form>
     </Card>
   )

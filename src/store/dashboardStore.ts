@@ -1,6 +1,6 @@
+import { create } from 'zustand'
 import { UserDashboard } from '../types'
 import { dashboardTemplate } from '../data/dashboardTemplate'
-import { create } from 'zustand/react'
 
 interface DashboardStore {
   dashboard: UserDashboard
@@ -14,7 +14,7 @@ export const useDashboardStore = create<DashboardStore>((set) => ({
     templateId: dashboardTemplate.id,
     configValues: {
       'chart-1': { currency: 'USD' },
-      'table-1': { currency: 'USD' },
+      'table-1': { currency: 'USD', rowsPerPage: 10 },
     },
     dashboardProperties: { syncCurrency: true, globalCurrency: 'USD' },
   },

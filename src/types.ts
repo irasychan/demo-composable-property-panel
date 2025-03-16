@@ -1,37 +1,27 @@
 /**
- * Represents a configurable property in a widget.
- * Each property has a type, UI control type, and default value.
- */
-export interface WidgetConfig {
-  key: string
-  label: string
-  type: 'string' | 'number' | 'boolean'
-  uiControl: 'input' | 'slider' | 'checkbox' | 'dropdown'
-  defaultValue: any
-  options?: any[] // Used for dropdowns
-}
-
-/**
  * Defines a widget in the dashboard template.
  * Each widget has an ID, type, and configurable options.
  */
 export interface WidgetDefinition {
   id: string
   type: string
-  configOptions: WidgetConfig[]
+  configOptions: ConfigOption[]
 }
 
 /**
  * Represents a configurable property at the dashboard level.
  * These are global settings (e.g., theme, refresh rate).
  */
-export interface DashboardConfig {
+export interface ConfigOption {
   key: string
   label: string
   type: 'string' | 'number' | 'boolean'
-  uiControl: 'input' | 'slider' | 'checkbox' | 'dropdown'
+  uiControl: 'input' | 'slider' | 'switch' | 'dropdown' | 'number'
   defaultValue: any
   options?: any[]
+  min?: number
+  max?: number
+  step?: number
 }
 
 /**
@@ -56,7 +46,7 @@ export interface ConditionalRule {
 export interface DashboardTemplate {
   id: string
   name: string
-  properties: DashboardConfig[] // Dashboard-wide settings
+  properties: ConfigOption[] // Dashboard-wide settings
   widgets: WidgetDefinition[] // Widgets defined in the template
   conditionalRules: ConditionalRule[] // Cross-widget conditions
 }

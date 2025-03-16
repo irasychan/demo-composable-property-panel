@@ -4,11 +4,10 @@ import { useDashboardStore } from '../../store/dashboardStore'
 
 const WidgetTable: React.FC<{ widgetId: string }> = ({ widgetId }) => {
   const { dashboard } = useDashboardStore()
-  const isSyncEnabled = dashboard.dashboardProperties.syncCurrency
-  const currency = isSyncEnabled
+  const rowsPerPage = dashboard.configValues[widgetId]?.rowsPerPage || 10
+  const currency = dashboard.dashboardProperties.syncCurrency
     ? dashboard.dashboardProperties.globalCurrency
     : dashboard.configValues[widgetId]?.currency
-  const rowsPerPage = dashboard.configValues[widgetId]?.rowsPerPage || 10
 
   const sampleData = Array.from({ length: 50 }, (_, index) => ({
     key: index + 1,
@@ -30,7 +29,7 @@ const WidgetTable: React.FC<{ widgetId: string }> = ({ widgetId }) => {
   ]
 
   return (
-    <Card title="Product Data" variant="borderless">
+    <Card title="Product Data" variant={'borderless'}>
       <Table
         dataSource={sampleData.slice(0, rowsPerPage)}
         columns={columns}
